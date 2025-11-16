@@ -6,22 +6,35 @@ import ImageGrid from "@/components/image-grid"
 import type { UnsplashImage } from "@/lib/types"
 import { unsplashAPI } from "@/lib/unsplash"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { Heart, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { useUserStorage } from "@/lib/use-user-storage"
 
 export default function FavoritesPage() {
   const [favoriteImages, setFavoriteImages] = useState<UnsplashImage[]>([])
   const [loading, setLoading] = useState(true)
   const [favorites, setFavorites] = useState<string[]>([])
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const { getItem, setItem, removeItem }  = useUserStorage();
 
   useEffect(() => {
     loadFavorites()
+
   }, [])
 
   const loadFavorites = async () => {
     try {
       setLoading(true)
-      const savedFavorites = localStorage.getItem("pixelvault-favorites")
+      const savedFavorites = getItem("favorites")
       const favoriteIds = savedFavorites ? JSON.parse(savedFavorites) : []
       setFavorites(favoriteIds)
 
@@ -52,7 +65,8 @@ export default function FavoritesPage() {
   }
 
   const handleImageClick = (image: UnsplashImage) => {
-    window.open(image.links.html, "_blank")
+    // window.open(image.links.html, "_blank") // to avoid image redirect to main unsplash site
+    console.warn(image.links.html)
   }
 
   const handleDownload = async (image: UnsplashImage) => {
@@ -78,7 +92,7 @@ export default function FavoritesPage() {
     const newFavorites = favorites.filter((id) => id !== image.id)
     setFavorites(newFavorites)
     setFavoriteImages((prev) => prev.filter((img) => img.id !== image.id))
-    localStorage.setItem("pixelvault-favorites", JSON.stringify(newFavorites))
+    setItem("favorites", newFavorites)
 
     toast.success( "Image removed from your favorites.")
   }
@@ -86,9 +100,10 @@ export default function FavoritesPage() {
   const clearAllFavorites = () => {
     setFavorites([])
     setFavoriteImages([])
-    localStorage.removeItem("pixelvault-favorites")
+    removeItem("favorites")
 
     toast.success("All favorite images have been removed.")
+    setConfirmDialogOpen(false)
   }
 
   return (
@@ -99,7 +114,7 @@ export default function FavoritesPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-              <Heart className="h-8 w-8 text-red-500" />
+              <Heart className="h-7 w-7 text-red-500" />
               Your Favorites
             </h1>
             <p className="text-muted-foreground">
@@ -110,14 +125,40 @@ export default function FavoritesPage() {
           </div>
 
           {favoriteImages.length > 0 && (
-            <Button
-              variant="outline"
-              onClick={clearAllFavorites}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 bg-transparent"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDialogOpen(true)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 bg-transparent"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All
+              </Button>
+
+              {/* Confirmation Dialog */}
+              <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+                <DialogContent className="py-5">
+                  <DialogHeader>
+                    <DialogTitle>Clear All Favorites?</DialogTitle>
+                    <DialogDescription>
+                      This will remove all saved favorite images. This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Separator className="my-4" />
+                  <DialogFooter className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={clearAllFavorites}
+                    >
+                      Yes, Clear All
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
         </div>
 

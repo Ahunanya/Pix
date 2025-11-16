@@ -1,3 +1,5 @@
+
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -16,6 +18,7 @@ import { deepSeekAPI } from "@/lib/deepseek"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Grid, TrendingUp, Folder, Sliders } from "lucide-react"
 import { toast } from "sonner"
+import { useUserStorage } from "@/lib/use-user-storage"
 
 interface FilterState {
   colors: string[]
@@ -49,11 +52,11 @@ export default function DashboardPage() {
 
   // Load favorites from localStorage
   useEffect(() => {
-    const savedFavorites = localStorage.getItem("pixelvault-favorites")
+    const savedFavorites = getItem("favorites")
     if (savedFavorites) {
       setFavorites(JSON.parse(savedFavorites))
     }
-  }, [])
+  }, [getItem])
 
   const loadRandomImages = async () => {
     try {
@@ -94,9 +97,10 @@ export default function DashboardPage() {
       setSuggestions(aiSuggestions)
 
       // Save search to history
-      const searches = JSON.parse(localStorage.getItem("pixelvault-searches") || "[]")
+      const savedSearches = getItem("searches")
+      const searches = savedSearches ? JSON.parse(savedSearches) : []
       const updatedSearches = [query, ...searches.filter((s: string) => s !== query)].slice(0, 10)
-      localStorage.setItem("pixelvault-searches", JSON.stringify(updatedSearches))
+      setItem("searches", updatedSearches)
     } catch (error) {
       console.error("Error searching images:", error)
       toast.error("Failed to search images. Please try again.")
@@ -209,7 +213,7 @@ export default function DashboardPage() {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = `pixelvault-${image.id}.jpg`
+      link.download = `pix-${image.id}.jpg`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -275,7 +279,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background">
       <DashboardHeader />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative overflow-x-hidden max-w-full">
         {/* Welcome Section */}
         <div className="text-center mb-8">
           <h1 className="mb-2 mt-5 text-4xl font-bold md:text-6xl xl:text-7xl xl:[line-height:1.125]">
@@ -397,6 +401,11 @@ export default function DashboardPage() {
           onClose={() => setIsModalOpen(false)}
           onDownload={handleDownload}
           onFavorite={handleFavorite}
+          imagesPool={images}
+          onOpenImage={(img) => {
+            setSelectedImage(img)
+            setIsModalOpen(true)
+          }}
           isFavorite={selectedImage ? favorites.includes(selectedImage.id) : false}
         />
 

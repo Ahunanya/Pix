@@ -11,8 +11,8 @@ import Link from 'next/link'
 
 export default function IntegrationsSection() {
     return (
-        <section className="py-24 md:py-32" id="integrations">
-            <div className="bg-muted dark:bg-background py-24 md:py-32">
+        <section className="py-8 md:py-16" id="integrations">
+            <div className="bg-muted dark:bg-background py-10 md:py-16">
                 <div className="mx-auto max-w-5xl px-6">
                     <div className="relative mx-auto flex max-w-sm items-center justify-between">
                         <div className="space-y-6">
